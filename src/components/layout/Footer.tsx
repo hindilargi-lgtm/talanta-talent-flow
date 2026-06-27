@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
           </div>
           
           <div className="flex flex-col md:items-end gap-6">
-            <h4 className="text-lg font-semibold">Contact Support</h4>
+            <h4 className="text-lg font-semibold text-red-500">Wasiliana na HR kwa Approval</h4>
             <div className="flex gap-4">
               <a 
                 href="https://wa.me/254108673423" 

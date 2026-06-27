@@ -9,15 +9,15 @@ import { storage } from './lib/storage';
 import { User, JobType, Application } from './types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './components/ui/dialog';
 import { Toaster, toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Briefcase, Info, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Info, ArrowRight } from 'lucide-react';
 import { Button } from './components/ui/button';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [view, setView] = useState<'home' | 'admin'>('home');
   const [authModal, setAuthModal] = useState<{ open: boolean; type: 'signin' | 'signup' }>({ open: false, type: 'signin' });
-  const [applyModal, setApplyModal] = useState<{ open: boolean; job: JobType | null }>({ open: false, job: null });
+  const [applyModal, setApplyModal] = useState<{ open: boolean; job: JobType | null; success: boolean }>({ open: false, job: null, success: false });
 
   useEffect(() => {
     const user = storage.getCurrentUser();
@@ -48,7 +48,7 @@ function App() {
       toast.info('Tafadhali Sign In kwanza ili uweze kuapply');
       return;
     }
-    setApplyModal({ open: true, job });
+    setApplyModal({ open: true, job, success: false });
   };
 
   const handleApplicationSubmit = (data: any) => {
@@ -56,7 +56,7 @@ function App() {
 
     const newApplication: Application = {
       id: Math.random().toString(36).substr(2, 9),
-      userId: currentUser.email, // using email as ID for simplicity
+      userId: currentUser.email,
       userName: data.fullName,
       userPhone: data.phoneNumber,
       userIdNumber: data.idNumber,
@@ -66,8 +66,12 @@ function App() {
     };
 
     storage.saveApplication(newApplication);
-    setApplyModal({ open: false, job: null });
-    toast.success('Maombi yako yamepokelewa! Subiri majibu kutoka kwa HR.');
+    setApplyModal({ ...applyModal, success: true });
+    
+    toast.success('Maombi yako yamepokelewa!', {
+      description: 'Tafadhali wasiliana na HR kupitia WhatsApp au Telegram hapo chini ili maombi yako yaweze kupitishwa (approved) haraka.',
+      duration: 10000,
+    });
   };
 
   return (
@@ -169,20 +173,48 @@ function App() {
       </Dialog>
 
       {/* Application Modal */}
-      <Dialog open={applyModal.open} onOpenChange={(open) => setApplyModal({ ...applyModal, open })}>
+      <Dialog open={applyModal.open} onOpenChange={(open) => setApplyModal({ ...applyModal, open, success: open ? applyModal.success : false })}>
         <DialogContent className="sm:max-w-lg p-8 rounded-2xl border-none shadow-2xl">
           <DialogHeader className="mb-2">
             <DialogTitle className="text-2xl font-bold">Fomu ya Maombi</DialogTitle>
-            <DialogDescription>Jaza fomu hii kwa umakini ili uweze kupatiwa nafasi ya kazi.</DialogDescription>
+            {!applyModal.success && <DialogDescription>Jaza fomu hii kwa umakini ili uweze kupatiwa nafasi ya kazi.</DialogDescription>}
           </DialogHeader>
-          {currentUser && applyModal.job && (
+          {applyModal.success ? (
+            <div className="py-8 text-center space-y-6">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto text-green-600">
+                <Info size={40} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold text-gray-900">Hongera! Maombi Yamepokelewa</h3>
+                <p className="text-gray-600">
+                  Ili maombi yako yaweze kupitishwa (Approved) haraka na uanze kazi, 
+                  tafadhali wasiliana na HR sasa hivi kupitia WhatsApp au Telegram.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 pt-4">
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700 h-14 font-bold text-lg"
+                  onClick={() => window.open('https://wa.me/254108673423', '_blank')}
+                >
+                  Wasiliana na HR kwa WhatsApp
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full h-14 font-bold text-lg border-blue-600 text-blue-600 hover:bg-blue-50"
+                  onClick={() => window.open('https://t.me/hrtalantastadium', '_blank')}
+                >
+                  Wasiliana na HR kwa Telegram
+                </Button>
+              </div>
+            </div>
+          ) : (currentUser && applyModal.job && (
             <ApplicationForm 
               user={currentUser} 
               jobType={applyModal.job} 
               onSubmit={handleApplicationSubmit}
-              onCancel={() => setApplyModal({ open: false, job: null })}
+              onCancel={() => setApplyModal({ open: false, job: null, success: false })}
             />
-          )}
+          ))}
         </DialogContent>
       </Dialog>
     </div>
